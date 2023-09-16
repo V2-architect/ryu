@@ -24,6 +24,9 @@ from . import packet_utils
 from . import bgp
 from . import openflow
 from . import zebra
+from . import someip
+
+import pdb
 
 
 LOG = logging.getLogger(__name__)
@@ -115,6 +118,8 @@ class tcp(packet_base.PacketBase):
     @staticmethod
     def get_payload_type(src_port, dst_port):
         from ryu.ofproto.ofproto_common import OFP_TCP_PORT, OFP_SSL_PORT_OLD
+        #LOG.info(f"    --> [SOME/IP][TCP] src_port={src_port}, dst_port={dst_port}")
+
         if bgp.TCP_SERVER_PORT in [src_port, dst_port]:
             return bgp.BGPMessage
         elif(src_port in [OFP_TCP_PORT, OFP_SSL_PORT_OLD] or
@@ -124,6 +129,8 @@ class tcp(packet_base.PacketBase):
             return zebra._ZebraMessageFromZebra
         elif dst_port == zebra.ZEBRA_PORT:
             return zebra.ZebraMessage
+        elif src_port == 53520 or dst_port == 53520:
+            return someip.someip
         else:
             return None
 

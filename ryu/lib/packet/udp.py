@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import struct
+import logging
 
 from . import packet_base
 from . import packet_utils
@@ -21,6 +22,10 @@ from . import dhcp
 from . import dhcp6
 from . import vxlan
 from . import geneve
+from . import someip
+import pdb
+
+LOG = logging.getLogger(__name__)
 
 
 class udp(packet_base.PacketBase):
@@ -54,6 +59,8 @@ class udp(packet_base.PacketBase):
 
     @staticmethod
     def get_packet_type(src_port, dst_port):
+        LOG.info(f"[SJH][UDP] src_port={src_port}, dst_port={dst_port}")
+
         if ((src_port in [67, 68] and dst_port == 67) or
                 (dst_port in [67, 68] and src_port == 67)):
             return dhcp.dhcp
@@ -65,6 +72,8 @@ class udp(packet_base.PacketBase):
             return vxlan.vxlan
         if dst_port == geneve.UDP_DST_PORT:
             return geneve.geneve
+        if src_port == 30490 or dst_port == 30490:
+            return someip.someip
         return None
 
     @classmethod
