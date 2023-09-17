@@ -17,6 +17,7 @@ import struct
 import logging
 
 from . import packet_base
+from . import someip_sd
 import pdb
 
 LOG = logging.getLogger(__name__)
@@ -71,9 +72,9 @@ class someip(packet_base.PacketBase):
         0xFF : "E_UNKNOWN",
     }
 
-    def __init__(self, msg_id, method_id, length, client_id, sess_id, protocol_ver, intf_ver, msg_type_num, ret_code):
+    def __init__(self, service_id, method_id, length, client_id, sess_id, protocol_ver, intf_ver, msg_type_num, ret_code):
         super(someip, self).__init__()
-        self.msg_id = msg_id
+        self.service_id = msg_id
         self.method_id = method_id
         self.length = length
         self.client_id = client_id
@@ -88,12 +89,21 @@ class someip(packet_base.PacketBase):
         return self.msg_type_tr_dict.get(msg_type_num, "WRONG_MSG_TYPE, " + str(msg_type_num))
 
     def __repl__():
-        print(f"SOME/IP packet(msg_id={self.msg_id}, method_id={self.method_id}, length={self.length}, \
+        print(f"SOME/IP packet(service_id={self.service_id}, method_id={self.method_id}, length={self.length}, \
                 client_id={self.client_id}, sess_id={self.sess_id}, protocol_ver={self.protocol_ver}, \
                 intf_ver={self.intf_ver}, msg_type={self.msg_type_str}, ret_code={self.ret_code}")
+
+    @staticmethod
+    def get_packet_type(service_id, method_id):
+        LOG.info(f"[SJH][SOME/IP] service_id={service_id}, method_id={method_id}")
+        if service_id == 0xffff and method_id == 0x8100:
+            return someip_sd.someip_sd
+        return None
 
     @classmethod
     def parser(cls, buf):
         someip_elems = struct.unpack_from(cls._PACK_STR, buf)
         msg = cls(*someip_elems)
-        return msg, None, None
+        total_length = msg.length
+        return msg, cls.get_packet_type(msg.service_id, msg.method_id), buf[msg._MIN_LEN:total_length]
+
